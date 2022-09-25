@@ -1,0 +1,8 @@
+/venv/
+/backup/
+/src/secret.py
+/server.db
+/server — копия.db
+/.idea/
+/requirements.txt
+/logs/
