@@ -9,7 +9,7 @@ Base = declarative_base()
 
 
 # Определение таблицы в базе данных
-class Sql_Users(Base):
+class Sql_users(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
@@ -44,9 +44,7 @@ class Sql_anime_playlist(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
     anime_id: int = Column(Integer, ForeignKey('anime.id'))
     series = Column(Integer, nullable=False, default=1)
-    season = Column(Integer, nullable=False, default=1)
     state = Column(String, nullable=False, default='watching')
-    subscribe = Column(Boolean, nullable=False, default=False)
 
 
 class Sql_anime(Base):
@@ -54,7 +52,7 @@ class Sql_anime(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    names = Column(String, nullable=False)
+    names = Column(String)
     season = Column(Integer, nullable=False)
     series = Column(Integer, nullable=False)
     more_series = Column(Boolean, nullable=False)
@@ -66,6 +64,7 @@ class Sql_anime(Base):
     description = Column(String, nullable=False)
     anime_type = Column(String, nullable=False)
     image = Column(String, nullable=False)
+    t_image_id = Column(String)
 
     anime_urls = relationship('Sql_anime_urls', lazy='joined')
     anime_playlist = relationship('Sql_anime_playlist', lazy='joined')
@@ -73,7 +72,6 @@ class Sql_anime(Base):
 
     def __init__(self,
                  name: str,
-                 names: str,
                  season: int,
                  series: int,
                  last_series: int,
@@ -86,7 +84,6 @@ class Sql_anime(Base):
                  more_series: bool
                  ):
         self.name = name
-        self.names = names
         self.season = season
         self.series = series
         self.last_series = last_series
@@ -106,7 +103,14 @@ class Sql_anime_urls(Base):
     anime_id = Column(String, ForeignKey('anime.id'))
     url_type = Column(String, nullable=False)
     site = Column(String, nullable=False)
-    url = Column(String, nullable=False)
+    url = Column(String, nullable=False, unique=True)
+
+    def __init__(self, anime_id, url):
+        self.anime_id = anime_id
+        self.url = url
+        self.url_type = 'site'
+        if 'anime-bit' in url:
+            self.site = 'anime-bit'
 
 
 class Sql_users_log(Base):
@@ -127,3 +131,5 @@ class Sql_users_log(Base):
 # Создание таблицы
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
+
+session = Session()
