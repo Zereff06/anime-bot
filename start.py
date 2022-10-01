@@ -1,9 +1,9 @@
 import asyncio
+from aiogram import executor
 from telegram import handler
 from telegram import keyboard
 from service import logger
 from telegram.loader import dp
-from aiogram import executor
 from parsers import anime_bit
 
 

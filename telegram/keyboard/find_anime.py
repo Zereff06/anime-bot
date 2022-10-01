@@ -1,6 +1,5 @@
 from aiogram.types import Message, ReplyKeyboardMarkup, InlineKeyboardButton
-from sqlalchemy import desc
-from service.alchemy import session, Sql_anime
+from service import sql
 from telegram.keyboard import anime_posts
 from telegram.loader import dp
 
@@ -19,8 +18,8 @@ async def start(message: Message):
 
 
 async def find_last_anime_in_bd(message: Message, count):
-    last_ten_anime = session.query(Sql_anime).order_by(desc(Sql_anime.last_update)).limit(count).all()
-    for sql_anime in last_ten_anime:
+    last_some_anime = await sql.get_some_last_anime(count)
+    for sql_anime in last_some_anime:
         await anime_posts.send_anime_post(sql_anime, message.from_user.id)
 
 

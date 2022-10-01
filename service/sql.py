@@ -1,8 +1,8 @@
 from service.alchemy import *
-from loguru import logger
+from service.logger import logger
 from aiogram.types import Message
 from datetime import datetime
-
+from sqlalchemy import desc
 
 
 # posts = (
@@ -144,9 +144,9 @@ async def set_playlist_series(user_id: int, anime_id: int, current_series: int):
 
 
 async def check_anime_state(current_series, anime_id):
-    anime_series = session.query(Sql_anime.series).filter(Sql_anime.id == anime_id).first()[0]
+    anime_series, more_series = session.query(Sql_anime.series, Sql_anime.more_series).filter(Sql_anime.id == anime_id).first()
 
-    if anime_series == current_series:
+    if anime_series == current_series and not more_series:
         return 'finished'
     else:
         return 'watching'
@@ -160,3 +160,6 @@ async def add_t_image_id(anime_id: int, t_image_id: str):
     sql_anime = session.query(Sql_anime).filter(Sql_anime.id == anime_id).first()
     sql_anime.t_image_id = t_image_id
     session.commit()
+
+async def get_some_last_anime(count):
+    return session.query(Sql_anime).order_by(desc(Sql_anime.last_update)).limit(count).all()

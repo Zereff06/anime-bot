@@ -1,7 +1,7 @@
 import re
 from service import sql, parsing
 from telegram.keyboard import anime_posts
-from loguru import logger
+from service.logger import logger
 
 URL = 'https://anime-bit.ru'
 

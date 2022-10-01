@@ -13,6 +13,7 @@ async def show_my_playlist(message: Message):
         await message.reply('Ваш плейлист пуст :с', reply=False)
 
     for sql_playlist in sql_playlists:
-        await anime_posts.send_anime_post(sql_playlist.anime_id, user_t_id)
+        sql_anime = sql.get_anime_by_id(sql_playlist.anime_id)
+        await anime_posts.send_anime_post(sql_anime, user_t_id, sql_playlist)
 
 

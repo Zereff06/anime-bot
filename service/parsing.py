@@ -6,7 +6,7 @@ import lxml
 
 
 def get_soup(url):
-    html = get_html(url)
+    html = get_html(url).text
     soup = bs(html, 'lxml')
     return soup
 
@@ -17,7 +17,7 @@ def get_html(url):
     response = requests.get(url, headers=fake_user_agent, proxies=random_proxy)
     while True:
         if response.status_code == 200:
-            return response.text
+            return response
         elif len(anonymity.PROXY_LIST)< 5:
             anonymity.PROXY_LIST = anonymity.update_proxy_list()
         else:

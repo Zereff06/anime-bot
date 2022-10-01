@@ -3,7 +3,8 @@ from service import sql
 from telegram.loader import bot, dp
 from telegram.handler import states
 from aiogram import types
-from loguru import logger
+from service.logger import logger
+from service import images
 
 anime_id_whose_questing = {}
 
@@ -11,14 +12,13 @@ anime_id_whose_questing = {}
 async def find_users_and_send_post_to_tg(new_series, sql_anime):
 
     sql_users = await sql.get_users_by_anime_in_playlist(new_series, sql_anime.id)
-    telegram_ids = [user.telegram_id for user in sql_users]
 
-    await send_anime_post(sql_anime, telegram_ids)
+    for sql_user in sql_users:
+        sql_playlist = sql.get_anime_playlists(sql_user.id, sql_anime.id)
+        await send_anime_post(sql_anime, sql_user.telegram_id, sql_playlist)
 
 
-async def send_anime_post(sql_anime: sql.Sql_anime, telegram_ids):
-    if isinstance(telegram_ids, int):
-        telegram_ids = [telegram_ids]
+async def send_anime_post(sql_anime: sql.Sql_anime, telegram_id, sql_playlist: sql.Sql_anime_playlist= None):
 
     if isinstance(sql_anime, int):
         sql_anime = await sql.get_anime_by_id(sql_anime)
@@ -30,47 +30,50 @@ async def send_anime_post(sql_anime: sql.Sql_anime, telegram_ids):
 
     keyboard = await post_keyboard(sql_anime)
 
-    text = f"{sql_anime.name}: {sql_anime.last_series} из {sql_anime.series}"  # TODO учитывать сколько просмотренно и писать
+    if sql_playlist:
+        text = f"{sql_anime.name}:\nПросмотрено: {sql_playlist.series}  из {sql_anime.last_series} (Всего {sql_anime.series})"
+    else:
+        text = f"{sql_anime.name}:\nВышло: {sql_anime.last_series} из {sql_anime.series}"
 
-    for telegram_id in telegram_ids:
-        try:
-            if exist_t_image_id:
-                if sql_anime.image[-4:] == 'webp':
-                    await bot.send_sticker(
-                            telegram_id,
-                            sql_anime.t_image_id,
-                            disable_notification=True,
-                    )
-                else:
-                    await bot.send_photo(
-                            telegram_id,
-                            sql_anime.t_image_id,
-                            disable_notification=True,
-                    )
+    try:
+        if exist_t_image_id:
+            if sql_anime.image[-4:] == 'webp':
+                await bot.send_sticker(
+                        telegram_id,
+                        sql_anime.t_image_id,
+                        disable_notification=True,
+                )
             else:
-                if sql_anime.image[-4:] == 'webp':
-                    msg = await bot.send_sticker(
-                            telegram_id,
-                            sql_anime.image,
-                            disable_notification=True,
-                    )
+                await bot.send_photo(
+                        telegram_id,
+                        sql_anime.t_image_id,
+                        disable_notification=True,
+                )
+        else:
+            if sql_anime.image[-4:] == 'webp':
+                msg = await bot.send_sticker(
+                        telegram_id,
+                        sql_anime.image,
+                        disable_notification=True,
+                )
 
-                    await sql.add_t_image_id(sql_anime.id, msg.sticker.file_id)
-                else:
-                    msg = await bot.send_photo(  # TODO допилить размер
-                            telegram_id,
-                            sql_anime.image,
-                            disable_notification=True,
-                    )
-                    await sql.add_t_image_id(sql_anime.id, msg.photo.file_id)
-            await bot.send_message(
-                    telegram_id,
-                    text,
-                    reply_markup=keyboard,
-                    disable_notification=True
-            )
-        except Exception:
-            logger.error(f'Не удалось отправить ответ для {telegram_id}')
+                await sql.add_t_image_id(sql_anime.id, msg.sticker.file_id)
+            else:
+                bio_image = images.change_image_size(sql_anime.image)
+                msg = await bot.send_photo(
+                        telegram_id,
+                        bio_image,
+                        disable_notification=True,
+                )
+                await sql.add_t_image_id(sql_anime.id, msg.photo.file_id)
+        await bot.send_message(
+                telegram_id,
+                text,
+                reply_markup=keyboard,
+                disable_notification=True
+        )
+    except Exception:
+        logger.error(f'Не удалось отправить ответ для {telegram_id}')
 
 
 async def post_keyboard(sql_anime):
@@ -148,3 +151,5 @@ async def anime_post_subscribe_(callback_query: types.CallbackQuery):
     elif status == 'drop':
         await bot.send_message(user_t_id, 'Вы отписались от рассылки')
     await bot.answer_callback_query(callback_query.id)
+
+
