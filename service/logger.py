@@ -1,10 +1,10 @@
 from loguru import logger
 
 def start():
-    logger.add("src/logs/log.json",
-           format="{time} {level} {message}",
-           level="DEBUG",
-           rotation="512 KB",
+    logger.add("src/logs/log.log",
+           format="{time: HH:mm} {level} {message}",
+           level="INFO",
+           rotation="1024 KB",
            compression="zip",
            serialize=True
            )

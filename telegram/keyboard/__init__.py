@@ -1,4 +1,3 @@
-from .menu import dp
 from .find_anime import dp
 
 

@@ -1,20 +1,22 @@
 from aiogram.types import Message, ReplyKeyboardMarkup, InlineKeyboardButton
 from service import sql
-from telegram.keyboard import anime_posts
+from telegram import anime_posts
 from telegram.loader import dp
-
-
-async def start( message: Message ):
-    button_menu = ReplyKeyboardMarkup(resize_keyboard = False)
-    button_menu.add(InlineKeyboardButton("Найти аниме"))
-    button_menu.add(InlineKeyboardButton('Показать 10 новых аниме'))
-
-    await message.answer("Найти аниме:", reply_markup = button_menu)
 
 
 @dp.message_handler(text=['Найти аниме'])
 async def start(message: Message):
     await find_last_anime_in_bd(message, 10)
+
+# async def start( message: Message ):
+#     button_menu = ReplyKeyboardMarkup(resize_keyboard = False)
+#     button_menu.add(InlineKeyboardButton("Найти аниме"))
+#     button_menu.add(InlineKeyboardButton('Показать 10 новых аниме'))
+#
+#     await message.answer("Найти аниме:", reply_markup = button_menu)
+#
+
+
 
 
 async def find_last_anime_in_bd(message: Message, count):

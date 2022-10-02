@@ -1,8 +1,6 @@
-from aiogram.utils.callback_data import CallbackData
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram import types
 from service import sql
 from telegram.loader import dp
-from telegram.keyboard import menu
 
 # cl_anime_post = CallbackData('anime_post', 'anime_id', 'action', 'value')
 
@@ -89,23 +87,18 @@ from telegram.keyboard import menu
 
 # Команда подписки
 @dp.message_handler(commands=['hello', 'hi'])
-async def hello(message: Message):
+async def hello(message: types.Message):
     await message.answer(f"Привет, {message.from_user.first_name}!")
 
 
 @dp.message_handler(commands=['start'])
-async def start(message: Message):
+async def start(message: types.Message):
     await sql.add_new_user(message)
     await message.answer('Нья !')
-
-
-@dp.message_handler(commands=['menu'])
-async def start(message: Message):
-    await menu.start(message)
 
 
 """Utils"""
 # Ответ на неузнаную команду
 @dp.message_handler()
-async def echo(message: Message):
+async def echo(message: types.Message):
     await message.answer('Нья ?')

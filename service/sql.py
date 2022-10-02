@@ -163,3 +163,6 @@ async def add_t_image_id(anime_id: int, t_image_id: str):
 
 async def get_some_last_anime(count):
     return session.query(Sql_anime).order_by(desc(Sql_anime.last_update)).limit(count).all()
+
+async def get_anime_by_url(url):
+    return session.query(Sql_anime).join(Sql_anime_urls).filter(Sql_anime_urls.url == url).first()

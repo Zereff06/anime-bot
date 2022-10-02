@@ -1,93 +1,16 @@
+from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from service import sql
 from telegram.loader import bot, dp
 from telegram.handler import states
-from aiogram import types
-from service.logger import logger
-from service import images
+from telegram.keyboard import keyboards
 
 anime_id_whose_questing = {}
 
 
-async def find_users_and_send_post_to_tg(new_series, sql_anime):
-
-    sql_users = await sql.get_users_by_anime_in_playlist(new_series, sql_anime.id)
-
-    for sql_user in sql_users:
-        sql_playlist = sql.get_anime_playlists(sql_user.id, sql_anime.id)
-        await send_anime_post(sql_anime, sql_user.telegram_id, sql_playlist)
-
-
-async def send_anime_post(sql_anime: sql.Sql_anime, telegram_id, sql_playlist: sql.Sql_anime_playlist= None):
-
-    if isinstance(sql_anime, int):
-        sql_anime = await sql.get_anime_by_id(sql_anime)
-
-    if sql_anime.t_image_id is None:
-        exist_t_image_id = False
-    else:
-        exist_t_image_id = True
-
-    keyboard = await post_keyboard(sql_anime)
-
-    if sql_playlist:
-        text = f"{sql_anime.name}:\nПросмотрено: {sql_playlist.series}  из {sql_anime.last_series} (Всего {sql_anime.series})"
-    else:
-        text = f"{sql_anime.name}:\nВышло: {sql_anime.last_series} из {sql_anime.series}"
-
-    try:
-        if exist_t_image_id:
-            if sql_anime.image[-4:] == 'webp':
-                await bot.send_sticker(
-                        telegram_id,
-                        sql_anime.t_image_id,
-                        disable_notification=True,
-                )
-            else:
-                await bot.send_photo(
-                        telegram_id,
-                        sql_anime.t_image_id,
-                        disable_notification=True,
-                )
-        else:
-            if sql_anime.image[-4:] == 'webp':
-                msg = await bot.send_sticker(
-                        telegram_id,
-                        sql_anime.image,
-                        disable_notification=True,
-                )
-
-                await sql.add_t_image_id(sql_anime.id, msg.sticker.file_id)
-            else:
-                bio_image = images.change_image_size(sql_anime.image)
-                msg = await bot.send_photo(
-                        telegram_id,
-                        bio_image,
-                        disable_notification=True,
-                )
-                await sql.add_t_image_id(sql_anime.id, msg.photo.file_id)
-        await bot.send_message(
-                telegram_id,
-                text,
-                reply_markup=keyboard,
-                disable_notification=True
-        )
-    except Exception:
-        logger.error(f'Не удалось отправить ответ для {telegram_id}')
-
-
-async def post_keyboard(sql_anime):
-    keyboard = InlineKeyboardMarkup().add()
-
-    watched = InlineKeyboardButton(text='Просмотрел!', callback_data=f'anime_post_watched_{sql_anime.id}')
-    link = InlineKeyboardButton(text='Ссылка!', url=sql_anime.anime_urls[0].url)
-    settings = InlineKeyboardButton(text='Отслеживать/Бросить', callback_data=f'anime_post_subscribe_{sql_anime.id}')
-
-    keyboard.row(watched)
-    keyboard.row(link)
-    keyboard.row(settings)
-
-    return keyboard
+@dp.message_handler(commands=['menu'])
+async def start(message: types.Message):
+    await keyboards.get_main_keyboard(message)
 
 
 @dp.callback_query_handler(lambda c: "anime_post_watched_" in c.data)
@@ -126,6 +49,7 @@ async def first_test_state_case_met(message: types.Message):
 
         del anime_id_whose_questing[user_id]
         await dp.current_state(user=user_t_id).reset_state()
+        await message.reply('Обновлено :)')
 
     elif text.lower() == 'отмена':
         await dp.current_state(user=user_t_id).reset_state()
@@ -150,6 +74,34 @@ async def anime_post_subscribe_(callback_query: types.CallbackQuery):
         await bot.send_message(user_t_id, 'Вы подписались на рассылку')
     elif status == 'drop':
         await bot.send_message(user_t_id, 'Вы отписались от рассылки')
+
+    await callback_query.message.edit_text(callback_query.message.text, reply_markup=await keyboards.get_post_settings(callback_query.message, anime_id))
     await bot.answer_callback_query(callback_query.id)
 
 
+@dp.callback_query_handler(lambda c: "settings_" in c.data)
+async def anime_post_settings_(callback_query: types.CallbackQuery):
+    anime_id = int(callback_query.data.split('_')[-1])
+    keyboard = await keyboards.get_post_settings(callback_query.message, anime_id)
+    await  callback_query.message.edit_text(text=callback_query.message.text, reply_markup=keyboard)
+
+
+@dp.callback_query_handler(lambda c: "anime_post_back_" in c.data)
+async def anime_post_settings_(callback_query: types.CallbackQuery):
+    anime_id = int(callback_query.data.split('_')[-1])
+    sql_anime = await sql.get_anime_by_id(anime_id)
+    keyboard = await keyboards.get_post_keyboard(sql_anime)
+
+    await  callback_query.message.edit_text(text=callback_query.message.text, reply_markup=keyboard)
+
+
+
+@dp.callback_query_handler(lambda c: "anime_post_set_series_" in c.data)
+async def anime_post_set_series_(callback_query: types.CallbackQuery):
+    user_t_id = callback_query.message.chat.id
+    anime_id = int(callback_query.data.split('_')[-1])
+    user_id = await sql.get_user_id_by_t_id(user_t_id)
+    anime_id_whose_questing[user_id] = anime_id
+    await dp.current_state(user=user_t_id).set_state(states.Questions.how_many_series_user_watch)
+    await  callback_query.message.reply('Сколько вы просмотрели?', reply=False)
+    await bot.answer_callback_query(callback_query.id)
