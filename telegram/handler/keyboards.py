@@ -64,6 +64,7 @@ async def anime_post_subscribe_(callback_query: types.CallbackQuery):
     user_t_id = callback_query.from_user.id
     user_id = await sql.get_user_id_by_t_id(user_t_id)
     anime_id = int(callback_query.data.split('_')[-1])
+    sql_anime = await sql.get_anime_by_id(anime_id)
 
     status = await sql.subscribe_or_unsubscribe_to_anime(user_id, anime_id)
     if status == 'added to db':
@@ -71,9 +72,9 @@ async def anime_post_subscribe_(callback_query: types.CallbackQuery):
         await dp.current_state(user=user_t_id).set_state(states.Questions.how_many_series_user_watch)
         await bot.send_message(user_t_id, 'Аниме добавленно в плейлист!\nСколько вы просмотрели?')
     elif status == 'watching':
-        await bot.send_message(user_t_id, 'Вы подписались на рассылку')
+        await bot.send_message(user_t_id, f'Вы подписались на {sql_anime.name}')
     elif status == 'drop':
-        await bot.send_message(user_t_id, 'Вы отписались от рассылки')
+        await bot.send_message(user_t_id, f'Вы отписались от {sql_anime.name}')
 
     await callback_query.message.edit_text(callback_query.message.text, reply_markup=await keyboards.get_post_settings(callback_query.message, anime_id))
     await bot.answer_callback_query(callback_query.id)
