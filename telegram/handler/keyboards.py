@@ -27,12 +27,13 @@ async def anime_post_watched_(callback_query: types.CallbackQuery):
         await bot.send_message(user_t_id, 'Аниме добавленно в плейлист!\nСколько вы просмотрели?')
     else:
         sql_anime = await sql.get_anime_by_id(anime_id)
+        sql_playlist = await sql.get_anime_playlists(user_id, anime_id)
 
         if anime_state == 'watching':
-            await bot.send_message(user_t_id, f'{sql_anime.name}\nПросмотренно {watched_series} из {sql_anime.series}', disable_notification=True)
+            await bot.send_message(user_t_id, f"{sql_anime.name}:\nПросмотрено: {sql_playlist.series}  из {sql_anime.last_series} (Всего {sql_anime.series})", disable_notification=True)
 
         elif anime_state == 'finished':
-            await bot.send_message(user_t_id, f'{sql_anime.name}\nВсё просмотренно {watched_series} из {sql_anime.series}!', disable_notification=True)
+            await bot.send_message(user_t_id, f'{sql_anime.name}\nВсё просмотрено: {sql_playlist.series} из {sql_anime.series}!', disable_notification=True)
 
     await bot.answer_callback_query(callback_query.id)
 
