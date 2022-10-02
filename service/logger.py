@@ -1,7 +1,7 @@
 from loguru import logger
 
 def start():
-    logger.add("logs/log.json",
+    logger.add("src/logs/log.json",
            format="{time} {level} {message}",
            level="DEBUG",
            rotation="512 KB",

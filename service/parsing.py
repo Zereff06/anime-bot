@@ -6,8 +6,10 @@ import lxml
 
 
 def get_soup(url):
-    html = get_html(url).text
-    soup = bs(html, 'lxml')
+    html = get_html(url)
+    if html is False:
+        return False
+    soup = bs(html.text, 'lxml')
     return soup
 
 def get_html(url):
@@ -21,4 +23,7 @@ def get_html(url):
         elif len(anonymity.PROXY_LIST)< 5:
             anonymity.PROXY_LIST = anonymity.update_proxy_list()
         else:
-            anonymity.PROXY_LIST.pop(anonymity.PROXY_LIST.index(random_proxy))
+            if requests.get('https://anime-bit.ru',headers=fake_user_agent, proxies=random_proxy).status_code == 200:
+                return False
+            else:
+                anonymity.PROXY_LIST.pop(anonymity.PROXY_LIST.index(random_proxy))

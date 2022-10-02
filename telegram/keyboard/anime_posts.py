@@ -118,11 +118,11 @@ async def anime_post_watched_(callback_query: types.CallbackQuery):
 async def first_test_state_case_met(message: types.Message):
     text = message.text
     user_t_id = message.from_user.id
-    user_id = sql.get_user_id_by_t_id(user_t_id)
+    user_id = await sql.get_user_id_by_t_id(user_t_id)
 
     if text.isnumeric():
         anime_id = anime_id_whose_questing[user_id]
-        await sql.set_playlist_series(user_t_id, anime_id, int(text))
+        await sql.set_playlist_series(user_id, anime_id, int(text))
 
         del anime_id_whose_questing[user_id]
         await dp.current_state(user=user_t_id).reset_state()

@@ -131,7 +131,7 @@ async def update_anime_series(sql_anime: Sql_anime, new_series: int):
 
 
 async def set_playlist_series(user_id: int, anime_id: int, current_series: int):
-    sql_playlist = session.query(Sql_anime_playlist).filter(Sql_users.id == user_id, Sql_anime_playlist.anime_id == anime_id).first()
+    sql_playlist = session.query(Sql_anime_playlist).filter(Sql_anime_playlist.user_id == user_id, Sql_anime_playlist.anime_id == anime_id).first()
 
     if sql_playlist is None:
         await add_anime_to_playlist(user_id, anime_id)
