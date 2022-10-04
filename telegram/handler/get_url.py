@@ -3,9 +3,9 @@ from service import parsing, sql
 from parsers import anime_bit
 from telegram import anime_posts
 
+
 @dp.message_handler(lambda text: 'anime-bit.ru' in text.text)
 async def parse_anime_bit_handler(message: types.Message):
-
     url = message.text
     sql_anime = await sql.get_anime_by_url(url)
     if sql_anime is not None:

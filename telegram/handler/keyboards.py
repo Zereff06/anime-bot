@@ -97,7 +97,6 @@ async def anime_post_settings_(callback_query: types.CallbackQuery):
     await  callback_query.message.edit_text(text=callback_query.message.text, reply_markup=keyboard)
 
 
-
 @dp.callback_query_handler(lambda c: "anime_post_set_series_" in c.data)
 async def anime_post_set_series_(callback_query: types.CallbackQuery):
     user_t_id = callback_query.message.chat.id

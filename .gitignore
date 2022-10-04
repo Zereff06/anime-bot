@@ -5,6 +5,8 @@
 /server — копия.db
 /.idea/
 /requirements.txt
-/logs/
+/src/logs/
 /src/test/
 /.gitignore
+
+*/__pycache__/*

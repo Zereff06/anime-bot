@@ -5,18 +5,15 @@ from telegram.keyboard import keyboards
 from aiogram.utils.exceptions import WrongFileIdentifier
 
 
-
 async def find_users_and_send_post_to_tg(new_series, sql_anime):
-
     sql_users = await sql.get_users_by_anime_in_playlist(new_series, sql_anime.id)
 
     for sql_user in sql_users:
-        sql_playlist = sql.get_anime_playlists(sql_user.id, sql_anime.id)
+        sql_playlist = await sql.get_anime_playlists(sql_user.id, sql_anime.id)
         await send_anime_post(sql_anime, sql_user.telegram_id, sql_playlist)
 
 
-async def send_anime_post(sql_anime: sql.Sql_anime, telegram_id, sql_playlist: sql.Sql_anime_playlist= None):
-
+async def send_anime_post(sql_anime: sql.Sql_anime, telegram_id, sql_playlist: sql.Sql_anime_playlist = None):
     if isinstance(sql_anime, int):
         sql_anime = await sql.get_anime_by_id(sql_anime)
 
@@ -34,7 +31,7 @@ async def send_anime_post(sql_anime: sql.Sql_anime, telegram_id, sql_playlist: s
 
     try:
         if not exist_t_image_id:
-           await _send_img_and_save_id(sql_anime, telegram_id)
+            await _send_img_and_save_id(sql_anime, telegram_id)
         else:
             await _send_img(sql_anime, telegram_id)
     except WrongFileIdentifier:
@@ -49,6 +46,7 @@ async def send_anime_post(sql_anime: sql.Sql_anime, telegram_id, sql_playlist: s
                 disable_notification=True
         )
 
+
 async def _send_img(sql_anime, telegram_id):
     if sql_anime.image[-4:] == 'webp':
         await bot.send_sticker(
@@ -62,6 +60,7 @@ async def _send_img(sql_anime, telegram_id):
                 sql_anime.t_image_id,
                 disable_notification=True,
         )
+
 
 async def _send_img_and_save_id(sql_anime, telegram_id):
     if sql_anime.image[-4:] == 'webp':

@@ -33,9 +33,9 @@ async def get_anime_name_by_id(anime_id):
     return session.query(Sql_anime.name).filter_by(id=anime_id).first()
 
 
-async def get_anime_playlists(user_id, anime_id= None):
+async def get_anime_playlists(user_id, anime_id=None):
     if anime_id is None:
-        return session.query(Sql_anime_playlist).filter(Sql_anime_playlist.user_id==user_id, Sql_anime_playlist.state == 'watching').all()
+        return session.query(Sql_anime_playlist).filter(Sql_anime_playlist.user_id == user_id, Sql_anime_playlist.state == 'watching').all()
     else:
         return session.query(Sql_anime_playlist).filter_by(user_id=user_id, anime_id=anime_id).first()
 
@@ -161,8 +161,10 @@ async def add_t_image_id(anime_id: int, t_image_id: str):
     sql_anime.t_image_id = t_image_id
     session.commit()
 
+
 async def get_some_last_anime(count):
     return session.query(Sql_anime).order_by(desc(Sql_anime.last_update)).limit(count).all()
+
 
 async def get_anime_by_url(url):
     return session.query(Sql_anime).join(Sql_anime_urls).filter(Sql_anime_urls.url == url).first()

@@ -29,7 +29,6 @@ async def start():
             await sql.update_anime_series(sql_anime, new_series)
 
 
-
 async def add_anime_to_db_from_home_page(post):
     _name = post.find('a', {'class': 'link_title_list'})['title']
     post_name = re.sub('».*', '', _name.replace('«', ''))
@@ -65,6 +64,7 @@ async def add_anime_to_db_from_home_page(post):
                                    url=post_url
                                    )
 
+
 async def add_anime_to_db_from_anime_page(soup, url):
     _name = soup.find('div', {'class': 'anime_page_title'}).text.strip()
     post_name = re.sub('».*', '', _name.replace('«', ''))
@@ -72,7 +72,7 @@ async def add_anime_to_db_from_anime_page(soup, url):
     post_img = URL + soup.find('div', {'class': 'img_box'}).find('img')['src']
 
     _series = soup.find('div', {'class': 'anime_page_upload'}).text
-    post_current_series,post_max_series = re.sub('.*?\[', '', _series).replace(']','').split(' из ')
+    post_current_series, post_max_series = re.sub('.*?\[', '', _series).replace(']', '').split(' из ')
     more_series = '+' in _series
     season = re.sub('.*?» .*?-', '', _name)
 

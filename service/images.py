@@ -2,6 +2,7 @@ from PIL import Image
 from service import parsing, logger
 from io import BytesIO
 
+
 async def change_image_size(url):
     try:
         img_bio = BytesIO()
@@ -16,4 +17,3 @@ async def change_image_size(url):
         text = f"Не удалось скачать картинку для: {url}"
         logger.logger.error(text)
         raise Exception(text)
-
