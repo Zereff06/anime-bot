@@ -8,26 +8,33 @@ URL = 'https://anime-bit.ru'
 
 async def start():
     soup = parsing.get_soup(URL)
+
     soup_posts = soup.find_all('div', {'class': 'anime_list'})
 
     for post in soup_posts:
-        _name = post.find('a', {'class': 'link_title_list'})['title']
-        post_name = re.sub('».*', '', _name.replace('«', ''))
-
-        sql_anime = await sql.get_anime_by_name(post_name)
-
-        if not sql_anime:
-            sql_anime = await add_anime_to_db_from_home_page(post)
         try:
-            new_series = int(post.find('div', {'class': 'anime_list_bottom_info'}).find_all('div')[1].text.replace(' Серии: [', '').replace(']', '').split(' из ')[0])
-        except:
-            logger.error(f'{_name} Ошибка при парсенге новый серии!')
-            continue
+            _name = post.find('a', {'class': 'link_title_list'})['title']
+            post_name = re.sub('».*', '', _name.replace('«', ''))
 
-        if sql_anime.last_series < new_series:
-            await anime_posts.find_users_and_send_post_to_tg(new_series, sql_anime)
-            await sql.update_anime_series(sql_anime, new_series)
+            sql_anime = await sql.get_anime_by_name(post_name)
 
+            if not sql_anime:
+                sql_anime = await add_anime_to_db_from_home_page(post)
+            try:
+                new_series = int(post.find('div', {'class': 'anime_list_bottom_info'}).find_all('div')[1].text.replace(' Серии: [', '').replace(']', '').split(' из ')[0])
+            except:
+                logger.error(f'{_name} Ошибка при парсенге новый серии!')
+                continue
+
+            if sql_anime.last_series < new_series:
+                sql_anime.last_series = int(post.find('div', {'class': 'anime_list_bottom_info'}).find_all('div')[1].text.replace(' Серии: [', '').replace(']', '').split(' из ')[0])
+                sql.session.commit()
+
+                await anime_posts.find_users_and_send_post_to_tg(new_series, sql_anime)
+                await sql.update_anime_series(sql_anime, new_series)
+
+        except Exception:
+            logger.error("Парсинг не удался->" + soup.text)
 
 async def add_anime_to_db_from_home_page(post):
     _name = post.find('a', {'class': 'link_title_list'})['title']
@@ -65,7 +72,11 @@ async def add_anime_to_db_from_home_page(post):
                                    )
 
 
-async def add_anime_to_db_from_anime_page(soup, url):
+async def add_anime_to_db_from_anime_page(url):
+    soup = parsing.get_soup(url)
+    if soup is None:
+        return False
+
     _name = soup.find('div', {'class': 'anime_page_title'}).text.strip()
     post_name = re.sub('».*', '', _name.replace('«', ''))
     post_url = url
@@ -76,9 +87,9 @@ async def add_anime_to_db_from_anime_page(soup, url):
     more_series = '+' in _series
     season = re.sub('.*?» .*?-', '', _name)
 
-    year = soup.find('div', {'class': 'discription'}).find_all('div')[1].text.replace('Год: ', '')
-    genre = soup.find('div', {'class': 'discription'}).find_all('div')[2].text.replace('Жанр: ', '')
-    country = soup.find('div', {'class': 'discription'}).find_all('div')[4].text.replace('Страна: ', '')
+    year = soup.find('div', {'class': 'discription'}).find_all('div')[2].text.replace('Год: ', '')
+    genre = soup.find('div', {'class': 'discription'}).find_all('div')[3].text.replace('Жанр: ', '').replace(' •', ',')
+    country = soup.find('div', {'class': 'discription'}).find_all('div')[5].text.replace('Страна: ', '')
     description = soup.find('div', {'class': 'discription'}).find('div', {'itemprop': 'description'}).text
 
     anime_type = 'ТВ'

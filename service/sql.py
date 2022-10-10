@@ -1,3 +1,4 @@
+from parsers import anime_bit
 from service.alchemy import *
 from service.logger import logger
 from aiogram.types import Message
@@ -47,7 +48,7 @@ async def get_users_by_anime_in_playlist(new_series, anime_id):
     return sql_users
 
 
-async def subscribe_or_unsubscribe_to_anime(user_id, anime_id):
+async def get_subscribe_status(user_id, anime_id):
     sql_anime_playlist = session.query(Sql_anime_playlist).filter_by(anime_id=anime_id, user_id=user_id).first()
     if not sql_anime_playlist:
         await add_anime_to_playlist(user_id, anime_id)
@@ -166,5 +167,8 @@ async def get_some_last_anime(count):
     return session.query(Sql_anime).order_by(desc(Sql_anime.last_update)).limit(count).all()
 
 
-async def get_anime_by_url(url):
-    return session.query(Sql_anime).join(Sql_anime_urls).filter(Sql_anime_urls.url == url).first()
+async def get_anime_by_url(url) -> Sql_anime:
+    sql_anime =  session.query(Sql_anime).join(Sql_anime_urls).filter(Sql_anime_urls.url == url).first()
+    if sql_anime is None:
+        sql_anime = await anime_bit.add_anime_to_db_from_anime_page(url)
+    return sql_anime

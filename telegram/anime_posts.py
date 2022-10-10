@@ -17,11 +17,6 @@ async def send_anime_post(sql_anime: sql.Sql_anime, telegram_id, sql_playlist: s
     if isinstance(sql_anime, int):
         sql_anime = await sql.get_anime_by_id(sql_anime)
 
-    if sql_anime.t_image_id is None:
-        exist_t_image_id = False
-    else:
-        exist_t_image_id = True
-
     keyboard = await keyboards.get_post_keyboard(sql_anime)
 
     if sql_playlist:
@@ -29,53 +24,22 @@ async def send_anime_post(sql_anime: sql.Sql_anime, telegram_id, sql_playlist: s
     else:
         text = f"{sql_anime.name}:\nВышло: {sql_anime.last_series} из {sql_anime.series}"
 
-    try:
-        if not exist_t_image_id:
-            await _send_img_and_save_id(sql_anime, telegram_id)
-        else:
-            await _send_img(sql_anime, telegram_id)
-    except WrongFileIdentifier:
-        await _send_img_and_save_id(sql_anime, telegram_id)
-    except Exception:
-        logger.logger.error(f'Не удалось отправить ответ для {telegram_id} -> anime id: #{sql_anime.id} -> {text}')
-    finally:
-        await bot.send_message(
-                telegram_id,
-                text,
-                reply_markup=keyboard,
-                disable_notification=True
-        )
+
+    await send_img(sql_anime, telegram_id, text, keyboard)
 
 
-async def _send_img(sql_anime, telegram_id):
-    if sql_anime.image[-4:] == 'webp':
-        await bot.send_sticker(
-                telegram_id,
-                sql_anime.t_image_id,
-                disable_notification=True,
-        )
+
+async def send_img(sql_anime, telegram_id, caption, keyboard):
+
+    if sql_anime.t_image_id is None or sql_anime.t_image_id == '':
+        image = await images.default_converting(url=sql_anime.image)
     else:
-        await bot.send_photo(
-                telegram_id,
-                sql_anime.t_image_id,
-                disable_notification=True,
-        )
+        image = sql_anime.t_image_id
 
-
-async def _send_img_and_save_id(sql_anime, telegram_id):
-    if sql_anime.image[-4:] == 'webp':
-        msg = await bot.send_sticker(
-                telegram_id,
-                sql_anime.image,
-                disable_notification=True,
-        )
-
-        await sql.add_t_image_id(sql_anime.id, msg.sticker.file_id)
-    else:
-        bio_image = images.change_image_size(sql_anime.image)
-        msg = await bot.send_photo(
-                telegram_id,
-                bio_image,
-                disable_notification=True,
-        )
-        await sql.add_t_image_id(sql_anime.id, msg.photo.file_id)
+    await bot.send_photo(
+            telegram_id,
+            image,
+            caption= caption,
+            disable_notification= True,
+            reply_markup=keyboard
+    )
